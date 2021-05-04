@@ -1,7 +1,10 @@
 package me.DMan16.AxItems.Items;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -102,11 +105,29 @@ public class AxItem extends KeyedItem {
 		} catch (Exception e) {}
 	}
 	
+	public static void addDisabledVanillas(Material ... materials) {
+		addDisabledVanillas(Arrays.asList(materials));
+	}
+	
+	public static void addDisabledVanillas(List<Material> materials) {
+		for (Material material : materials) if (material != null) disabledVanilla.add(material.name().toLowerCase());
+	}
+	
+	public static boolean isDisabledVanilla(String key) {
+		return key != null && disabledVanilla.contains(key);
+	}
+	
+	public static boolean isDisabledVanilla(Material material) {
+		return material != null && disabledVanilla.contains(material.name().toLowerCase());
+	}
+	
 	public static Set<AxItem> getByKeywords(String ... keywords) {
 		Set<AxItem> set = new HashSet<AxItem>();
-		if (keywords.length > 0) for (AxItem item : items.values()) {
+		List<String> keys = new ArrayList<String>();
+		for (String keyword : keywords) if (keyword != null && !disabledVanilla.contains(keyword)) keys.add(keyword);
+		if (!keys.isEmpty()) for (AxItem item : items.values()) {
 			boolean add = true;
-			for (String keyword : keywords) if (!item.hasKeyword(keyword)) {
+			for (String keyword : keys) if (!item.hasKeyword(keyword)) {
 				add = false;
 				break;
 			}

@@ -80,7 +80,9 @@ public class CommandListener implements CommandExecutor,TabCompleter {
 			}
 		} else if (args.length == 2) {
 			if (args[0].equalsIgnoreCase(base.get(0))) {
-				for (String name : AxItem.getAllItemKeys()) if (contains(args[1],name)) resultList.add(name);
+				if (args[1].equalsIgnoreCase("vanilla")) {
+					for (Material material : Material.values()) if (!AxItem.isDisabledVanilla(material)) resultList.add(material.name().toLowerCase());
+				} else for (String name : AxItem.getAllItemKeys()) if (contains(args[1],name)) resultList.add(name);
 			} else if (args[0].equalsIgnoreCase(base.get(2))) {
 				for (String name : AxSet.getAllSetNames()) if (contains(args[1],name)) resultList.add(name);
 			}
@@ -96,7 +98,7 @@ public class CommandListener implements CommandExecutor,TabCompleter {
 		protected List<AxItem> items;
 		
 		public ShowItems(Player player, List<AxItem> items, Object ... objs) {
-			super(player,player,Math.max(1,Math.min((int) Math.ceil(items.size() / 7.0) + 1,5)),
+			super(player,player,Math.max(2,Math.min((int) Math.ceil(items.size() / 7.0) + 1,5)),
 					Component.text("Items").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD),AxItems.getInstance(),items,objs);
 		}
 		
