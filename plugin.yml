@@ -1,0 +1,14 @@
+name: AxItems
+main: me.DMan16.AxItems.AxItems
+depend: [AxUtils]
+version: 1.0
+description: Items for Aldreda
+author: DMan16
+api-version: 1.16
+
+commands:
+  axitems:
+    permission: aldreda.command.axitems
+permissions:
+  aldreda.command.axitems:
+    default: op
