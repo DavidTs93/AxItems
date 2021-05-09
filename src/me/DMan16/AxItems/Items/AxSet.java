@@ -1,8 +1,8 @@
 package me.DMan16.AxItems.Items;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -10,25 +10,38 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import me.DMan16.AxStats.AxStat;
+
 public class AxSet implements Iterable<AxItem>,Cloneable {
 	private static HashMap<String,AxSet> sets = new HashMap<String,AxSet>();
 	
 	private final String name;
-	private List<AxItem> items;
+	private List<AxStat> stats;
+	private List<String> keys;
 	
-	public AxSet(@Nullable String name, String ... itemNames) {
+	public AxSet(@Nullable String name, List<AxStat> stats, String ... keys) {
+		this(name,stats,Arrays.asList(keys));
+	}
+	
+	public AxSet(@Nullable String name, List<AxStat> stats, List<String> keys) {
 		if (name != null) name = name.toLowerCase();
 		this.name = name;
-		this.items = new ArrayList<AxItem>();
-		for (String itemName : Objects.requireNonNull(itemNames.length < 2 ? null : itemNames,"Set must contain at least 2 items!")) {
-			AxItem item = AxItem.getAxItem(Objects.requireNonNull(itemName,"Set items cannot be null!"));
-			items.add(Objects.requireNonNull(Objects.requireNonNull(item,"Set items cannot be null!").hasKeyword("vanilla") ? null : item,"Set items cannot be vanilla!"));
-			if (name != null) AxItem.getAxItemOriginal(itemName).addKeywords("set","set_" + name);
+		this.stats = new ArrayList<AxStat>();
+		for (AxStat stat : Objects.requireNonNull(Objects.requireNonNull(stats,"Set stats cannot be null!").size() <= 0 ? null : stats,"Set stats cannot be empty!"))
+			if (Objects.requireNonNull(stat,"Set stat cannot be null!").val1() != 0) this.stats.add(stat);
+		if (this.stats.isEmpty()) throw new NullPointerException("Set stats cannot be empty!");
+		this.keys = new ArrayList<String>();
+		for (String key : Objects.requireNonNull(Objects.requireNonNull(keys).size() < 2 ? null : keys,"Set must contain at least 2 items!")) {
+			AxItem item = AxItem.getAxItem(Objects.requireNonNull(key,"Set items cannot be null!"));
+			this.keys.add(Objects.requireNonNull(this.keys.contains(Objects.requireNonNull(Objects.requireNonNull(item,"Set item not found!").hasKeyword("vanilla") ? null : key,
+					"Set items cannot be vanilla!")) ? null : key,"Set cannot contain the same item twice!"));
 		}
 	}
 	
 	public List<AxItem> items() {
-		return new ArrayList<AxItem>(items);
+		List<AxItem> items = new ArrayList<AxItem>();
+		for (String key : keys) items.add(AxItem.getAxItem(key));
+		return items;
 	}
 	
 	@Override
@@ -38,12 +51,12 @@ public class AxSet implements Iterable<AxItem>,Cloneable {
 			
 			@Override
 			public boolean hasNext() {
-				return currentIndex < items.size();
+				return currentIndex < keys.size();
 			}
 			
 			@Override
 			public AxItem next() {
-				return items.get(currentIndex++);
+				return AxItem.getAxItem(keys.get(currentIndex++));
 			}
 			
 			@Override
@@ -59,6 +72,10 @@ public class AxSet implements Iterable<AxItem>,Cloneable {
 		return name;
 	}
 	
+	public List<AxStat> getStats() {
+		return new ArrayList<AxStat>(stats);
+	}
+	
 	/**
 	 * IMPORTANT!!!
 	 * Once a Set has been registered its registered form can no longer be changed!!!
@@ -66,17 +83,8 @@ public class AxSet implements Iterable<AxItem>,Cloneable {
 	public AxSet register() {
 		sets.put(Objects.requireNonNull(sets.containsKey(Objects.requireNonNull(name())) ? null :
 			Objects.requireNonNull(name(),"Set key cannot be NULL!"),"The key: \"" + name() + "\" is already being used!"),this.getClass().cast(clone()));
+		for (String key : keys) AxItem.getAxItemOriginal(key).addKeywords(Arrays.asList("set","set_" + name));
 		return this;
-	}
-	
-	public static Set<AxSet> getAxSet(AxItem item) {
-		if (!item.hasKeyword("set")) return null;
-		Set<AxSet> sets = new HashSet<AxSet>();
-		for (String keyword : item.getKeywords()) if (keyword.startsWith("set_")) {
-			AxSet set = getAxSet(keyword.replace("set_",""));
-			if (set != null) sets.add(set);
-		}
-		return sets.isEmpty() ? null : sets;
 	}
 	
 	public static AxSet getAxSet(String name) {
@@ -93,7 +101,8 @@ public class AxSet implements Iterable<AxItem>,Cloneable {
 	public AxSet clone() {
 		try {
 			AxSet set = this.getClass().cast(super.clone());
-			set.items = new ArrayList<AxItem>(this.items);
+			set.keys = new ArrayList<String>(this.keys);
+			set.stats = new ArrayList<AxStat>(this.stats);
 			return set;
 		} catch (Exception e) {}
 		return null;

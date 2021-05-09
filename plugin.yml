@@ -1,6 +1,6 @@
 name: AxItems
 main: me.DMan16.AxItems.AxItems
-depend: [AxUtils]
+depend: [AxUtils,AxStats]
 version: 1.0
 description: Items for Aldreda
 author: DMan16

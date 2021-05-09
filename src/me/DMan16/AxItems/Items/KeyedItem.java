@@ -1,6 +1,5 @@
 package me.DMan16.AxItems.Items;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -8,14 +7,10 @@ import javax.annotation.Nullable;
 
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
-
-import com.google.common.collect.Multimap;
 
 import me.Aldreda.AxUtils.Classes.Pair;
 import me.Aldreda.AxUtils.Utils.Utils;
@@ -23,7 +18,7 @@ import net.kyori.adventure.text.Component;
 
 @SuppressWarnings("unchecked")
 class KeyedItem implements Cloneable {
-	protected final static NamespacedKey ItemKey = Utils.namespacedKey("aldreda_item");
+	protected final static NamespacedKey ItemKey = Utils.namespacedKey("aldreda_axitem");
 	
 	private ItemStack item;
 	private String key;
@@ -35,7 +30,6 @@ class KeyedItem implements Cloneable {
 	KeyedItem(ItemStack item, @Nullable String key) {
 		this.item = Objects.requireNonNull(Utils.isNull(item) ? null : item.clone());
 		if (key != null) {
-			key = key.toLowerCase();
 			ItemMeta meta = this.item.getItemMeta();
 			meta.getPersistentDataContainer().set(ItemKey,PersistentDataType.STRING,key);
 			this.item.setItemMeta(meta);
@@ -58,12 +52,12 @@ class KeyedItem implements Cloneable {
 		return item.getItemMeta();
 	}
 	
-	private KeyedItem meta(ItemMeta meta) {
+	protected KeyedItem meta(ItemMeta meta) {
 		item.setItemMeta(meta);
 		return this;
 	}
 	
-	protected int getAmount() {
+	public int getAmount() {
 		return item.getAmount();
 	}
 	
@@ -125,16 +119,6 @@ class KeyedItem implements Cloneable {
 		return meta(meta);
 	}
 	
-	public List<Component> lore() {
-		return meta().hasLore() ? meta().lore() : null;
-	}
-	
-	public KeyedItem lore(List<Component> lore) {
-		ItemMeta meta = meta();
-		meta.lore(lore);
-		return meta(meta);
-	}
-	
 	public <T> T PersistentDataContainerGet(NamespacedKey key, PersistentDataType<T,T> type) {
 		return meta().getPersistentDataContainer().get(key,type);
 	}
@@ -142,6 +126,12 @@ class KeyedItem implements Cloneable {
 	public <T> KeyedItem PersistentDataContainerSet(NamespacedKey key, PersistentDataType<T,T> type, T val) {
 		ItemMeta meta = meta();
 		meta.getPersistentDataContainer().set(key,type,val);
+		return meta(meta);
+	}
+	
+	public KeyedItem PersistentDataContainerRemove(NamespacedKey key) {
+		ItemMeta meta = meta();
+		meta.getPersistentDataContainer().remove(key);
 		return meta(meta);
 	}
 	
@@ -155,13 +145,7 @@ class KeyedItem implements Cloneable {
 		return meta(meta);
 	}
 	
-	public KeyedItem PersistentDataContainerRemove(NamespacedKey key) {
-		ItemMeta meta = meta();
-		meta.getPersistentDataContainer().remove(key);
-		return meta(meta);
-	}
-	
-	public Multimap<Attribute,AttributeModifier> getAttributes() {
+	/*public Multimap<Attribute,AttributeModifier> getAttributes() {
 		return meta().getAttributeModifiers();
 	}
 	
@@ -189,7 +173,7 @@ class KeyedItem implements Cloneable {
 		ItemMeta meta = meta();
 		for (Pair<Attribute,AttributeModifier> attribute : attributes) meta.removeAttributeModifier(attribute.first(),attribute.second());
 		return meta(meta);
-	}
+	}*/
 	
 	@Override
 	public KeyedItem clone() {
