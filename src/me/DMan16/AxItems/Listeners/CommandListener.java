@@ -1,20 +1,5 @@
 package me.DMan16.AxItems.Listeners;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import org.bukkit.Material;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.PluginCommand;
-import org.bukkit.command.TabCompleter;
-import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemStack;
-
 import me.Aldreda.AxUtils.Utils.ListenerInventoryPages;
 import me.Aldreda.AxUtils.Utils.Utils;
 import me.DMan16.AxItems.AxItems;
@@ -23,6 +8,16 @@ import me.DMan16.AxItems.Items.AxSet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Material;
+import org.bukkit.command.*;
+import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class CommandListener implements CommandExecutor,TabCompleter {
 	private static final ItemStack border = Utils.makeItem(Material.BLACK_STAINED_GLASS_PANE,Component.empty(),ItemFlag.values());
@@ -96,16 +91,18 @@ public class CommandListener implements CommandExecutor,TabCompleter {
 	
 	private class ShowItems extends ListenerInventoryPages {
 		protected List<AxItem> items;
+		protected Player player;
 		
 		public ShowItems(Player player, List<AxItem> items, Object ... objs) {
 			super(player,player,Math.max(2,Math.min((int) Math.ceil(items.size() / 7.0) + 1,5)),
-					Component.text("Items").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD),AxItems.getInstance(),items,objs);
+					Component.text("Items").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD),AxItems.getInstance(),items,objs,player);
 		}
 		
 		@SuppressWarnings("unchecked")
 		@Override
 		protected void first(Object ... objs) {
 			this.items = new ArrayList<AxItem>((List<AxItem>) objs[0]);
+			this.player = (Player) objs[2];
 		}
 		
 		@Override
@@ -119,7 +116,7 @@ public class CommandListener implements CommandExecutor,TabCompleter {
 		
 		protected ItemStack editItem(int idx) {
 			if (idx >= items.size()) return null;
-			return items.get(idx).item();
+			return items.get(idx).item(player);
 		}
 		
 		protected void setPageContents(int page) {
@@ -134,7 +131,7 @@ public class CommandListener implements CommandExecutor,TabCompleter {
 		
 		protected void otherSlot(InventoryClickEvent event, int slot, ItemStack slotItem) {
 			if (slot >= inventory.getSize() || isBorder(slot)) return;
-			Utils.givePlayer((Player) event.getWhoClicked(),this.items.get(slot + 28 * (currentPage - 1) - 8 - 2 * (slot / 9)).item(),null,false);
+			Utils.givePlayer((Player) event.getWhoClicked(),this.items.get(slot + 28 * (currentPage - 1) - 8 - 2 * (slot / 9)).item(player),null,false);
 		}
 	}
 	

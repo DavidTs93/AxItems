@@ -1,20 +1,19 @@
 package me.DMan16.AxItems.Items;
 
-import java.util.Map;
-import java.util.Objects;
-
-import javax.annotation.Nullable;
-
+import me.Aldreda.AxUtils.Classes.Pair;
+import me.Aldreda.AxUtils.Utils.Utils;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import me.Aldreda.AxUtils.Classes.Pair;
-import me.Aldreda.AxUtils.Utils.Utils;
-import net.kyori.adventure.text.Component;
+import javax.annotation.Nullable;
+import java.util.Map;
+import java.util.Objects;
 
 @SuppressWarnings("unchecked")
 class KeyedItem implements Cloneable {
@@ -40,7 +39,7 @@ class KeyedItem implements Cloneable {
 	/**
 	 * @return clone of the item
 	 */
-	public ItemStack item() {
+	public ItemStack item(Player player) {
 		return item.clone();
 	}
 	

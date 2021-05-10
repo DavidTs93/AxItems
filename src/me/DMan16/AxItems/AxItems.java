@@ -1,12 +1,12 @@
 package me.DMan16.AxItems;
 
+import me.Aldreda.AxUtils.Utils.Utils;
+import me.DMan16.AxItems.Listeners.AxItemListeners;
+import me.DMan16.AxItems.Listeners.AxSetListener;
+import me.DMan16.AxItems.Listeners.CommandListener;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import me.Aldreda.AxUtils.Utils.Utils;
-import me.DMan16.AxItems.Listeners.AxItemListeners;
-import me.DMan16.AxItems.Listeners.CommandListener;
 
 public class AxItems extends JavaPlugin {
 	private static AxItems instance = null;
@@ -15,6 +15,7 @@ public class AxItems extends JavaPlugin {
 		instance = this;
 		new CommandListener();
 		new AxItemListeners();
+		new AxSetListener();
 		Utils.chatColorsLogPlugin("&fAxItems &aloaded!");
 	}
 	

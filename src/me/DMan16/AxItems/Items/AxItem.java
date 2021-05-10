@@ -1,28 +1,5 @@
 package me.DMan16.AxItems.Items;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Consumer;
-
-import javax.annotation.Nullable;
-
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
-
 import me.Aldreda.AxUtils.Classes.Pair;
 import me.Aldreda.AxUtils.Utils.Utils;
 import me.DMan16.AxStats.AxStat;
@@ -30,10 +7,27 @@ import me.DMan16.AxStats.AxStatType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nullable;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.Consumer;
 
 @SuppressWarnings("unchecked")
 public class AxItem extends KeyedItem {
-	private static HashMap<String,AxItem> items = new HashMap<String,AxItem>();
+	private static List<String> AxItemKeys = new ArrayList<String>();
+	private static List<AxItem> AxItems = new ArrayList<AxItem>();
 	private static List<String> disabledVanilla = new ArrayList<String>();
 	private static List<String> allKeywords = new ArrayList<String>();
 	
@@ -86,11 +80,11 @@ public class AxItem extends KeyedItem {
 	}
 	
 	@Override
-	public ItemStack item() {
-		ItemStack item = super.item();
+	public ItemStack item(Player player) {
+		ItemStack item = super.item(player);
 		ItemMeta meta = item.getItemMeta();
 		meta.displayName(makeName());
-		meta.lore(makeLore());
+		meta.lore(makeLore(player));
 		for (AxStat stat : stats) {
 			Pair<Attribute,AttributeModifier> attribute = stat.attribute();
 			if (attribute != null && attribute.first() != null && attribute.second() != null) meta.addAttributeModifier(attribute.first(),attribute.second());
@@ -150,11 +144,11 @@ public class AxItem extends KeyedItem {
 		return name;
 	}
 	
-	protected List<Component> makeLore() {
+	protected List<Component> makeLore(Player player) {
 		List<Component> lore = new ArrayList<Component>();
 		List<Component> aboveTopLore = aboveTopLore();
 		List<Component> statsLore = statsLore();
-		List<Component> setsLore = setsLore();
+		List<Component> setLore = setLore(player);
 		List<Component> enchantmentsLore = enchantmentsLore();
 		List<Component> belowBottomLore = belowBottomLore();
 		//lore.add(Component.empty());		// ?
@@ -170,12 +164,12 @@ public class AxItem extends KeyedItem {
 			lore.addAll(statsLore);
 			lore.add(Component.empty());
 		}
-		if (!enchantmentsLore.isEmpty()) {	// Maybe after setsLore?
+		if (!enchantmentsLore.isEmpty()) {	// Maybe after setLore?
 			lore.addAll(enchantmentsLore);
 			lore.add(Component.empty());
 		}
-		if (!setsLore.isEmpty()) {
-			lore.addAll(setsLore);
+		if (!setLore.isEmpty()) {
+			lore.addAll(setLore);
 			lore.add(Component.empty());
 		}
 		if (!bottomLore.isEmpty()) {
@@ -197,11 +191,18 @@ public class AxItem extends KeyedItem {
 		for (AxStat stat : stats) statsLore.add(stat.line());
 		return statsLore;
 	}
-	
-	protected List<Component> setsLore() {
-		List<Component> setsLore = new ArrayList<Component>();
-		
-		return setsLore;
+
+	private List<Component> setLore(Player player) {
+		List<Component> setLore = new ArrayList<Component>();
+		List<AxSet> sets = getSets();
+		if (sets.isEmpty() || player == null) return setLore;
+		boolean first = true;
+		for (AxSet set : getSets()) {
+			if (first) first = false;
+			else setLore.add(Component.empty());
+			setLore.addAll(set.lore(player));
+		}
+		return setLore;
 	}
 	
 	protected List<Component> enchantmentsLore() {
@@ -209,7 +210,7 @@ public class AxItem extends KeyedItem {
 		for (Entry<Enchantment,Integer> ench : getEnchantments().entrySet()) {
 			NamespacedKey key = ench.getKey().getKey();
 			Component comp = Component.translatable("enchantment." + key.getNamespace() + "." + key.getKey());
-			if (ench.getValue() !=  ench.getKey().getStartLevel() || ench.getKey().getStartLevel() !=  ench.getKey().getMaxLevel())
+			if (ench.getValue() != ench.getKey().getStartLevel() || ench.getKey().getStartLevel() != ench.getKey().getMaxLevel())
 				comp = comp.append(Component.space()).append(Component.text(Utils.toRoman(ench.getValue())));
 			enchantmentsLore.add(comp.color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC,false));
 		}
@@ -227,7 +228,7 @@ public class AxItem extends KeyedItem {
 		if (!hasKeyword("set")) return sets;
 		for (String keyword : keywords) if (keyword.startsWith("set_")) {
 			AxSet set = AxSet.getAxSet(keyword.replaceFirst("set_",""));
-			if (set != null) sets.add(set);
+			if (set != null && set.contains(this)) sets.add(set);
 		}
 		return sets;
 	}
@@ -237,8 +238,9 @@ public class AxItem extends KeyedItem {
 	 * Once an Item has been registered its registered form can no longer be changed!!!
 	 */
 	public AxItem register() {
-		items.put(Objects.requireNonNull(items.containsKey(Objects.requireNonNull(key())) ? null :
-			Objects.requireNonNull(key(),"Item key cannot be NULL!"),"The key: \"" + key() + "\" is already being used!"),this.getClass().cast(clone()));
+		AxItemKeys.add(Objects.requireNonNull(AxItemKeys.contains(Objects.requireNonNull(key())) ? null :
+				Objects.requireNonNull(key(),"Item key cannot be NULL!"),"The key: \"" + key() + "\" is already being used!"));
+		AxItems.add(clone());
 		return this;
 	}
 	
@@ -325,9 +327,9 @@ public class AxItem extends KeyedItem {
 		return this;
 	}
 	
-	public static ItemStack updateItem(ItemStack item) {
+	public static ItemStack updateItem(ItemStack item, @NotNull Player player) {
 		try {
-			return getAxItem(item).update(item).item();
+			return getAxItem(item).update(item).item(player);
 		} catch (Exception e) {}
 		return item;
 	}
@@ -348,8 +350,8 @@ public class AxItem extends KeyedItem {
 	public static AxItem getAxItem(String key) {
 		if (key == null) return null;
 		key = key.toLowerCase();
-		AxItem item = items.get(key);
-		if (item != null) return item.clone();
+		int idx = AxItemKeys.indexOf(key);
+		if (idx >= 0) return AxItems.get(idx).clone();
 		if (disabledVanilla.contains(key)) return null;
 		Material material = Material.getMaterial(key.toUpperCase());
 		if (material != null) return new AxItem(new ItemStack(material),key,Arrays.asList("minecraft","vanilla"));
@@ -358,8 +360,9 @@ public class AxItem extends KeyedItem {
 	
 	static AxItem getAxItemOriginal(String key) {
 		if (key == null) return null;
-		AxItem item = items.get(key);
-		return item;
+		int idx = AxItemKeys.indexOf(key.toLowerCase());
+		if (idx >= 0) return AxItems.get(idx);
+		return null;
 	}
 	
 	public static void addDisabledVanillas(String ... keys) {
@@ -389,7 +392,7 @@ public class AxItem extends KeyedItem {
 		List<AxItem> set = new ArrayList<AxItem>();
 		List<String> keys = new ArrayList<String>();
 		for (String keyword : keywords) if (keyword != null && !disabledVanilla.contains(keyword)) keys.add(keyword);
-		if (!keys.isEmpty()) for (AxItem item : items.values()) {
+		if (!keys.isEmpty()) for (AxItem item : AxItems) {
 			boolean add = true;
 			for (String keyword : keys) if (!item.hasKeyword(keyword)) {
 				add = false;
@@ -401,8 +404,8 @@ public class AxItem extends KeyedItem {
 	}
 
 	
-	public static Set<String> getAllItemKeys() {
-		return items.keySet();
+	public static List<String> getAllItemKeys() {
+		return new ArrayList<String>(AxItemKeys);
 	}
 	
 	public static List<String> getAllKeywords() {
@@ -467,7 +470,7 @@ public class AxItem extends KeyedItem {
 	@Override
 	public AxItem clone() {
 		try {
-			AxItem item = this.getClass().cast(super.clone());
+			AxItem item = (AxItem) super.clone();
 			item.keywords = new ArrayList<String>(this.keywords);
 			item.topLore = new ArrayList<Component>(this.topLore);
 			item.bottomLore = new ArrayList<Component>(this.bottomLore);
