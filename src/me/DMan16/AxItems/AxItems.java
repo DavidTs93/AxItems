@@ -1,10 +1,13 @@
 package me.DMan16.AxItems;
 
 import me.Aldreda.AxUtils.Utils.Utils;
+import me.DMan16.AxItems.Items.AxItem;
 import me.DMan16.AxItems.Listeners.AxItemListeners;
 import me.DMan16.AxItems.Listeners.AxSetListener;
 import me.DMan16.AxItems.Listeners.CommandListener;
+import me.DMan16.AxItems.Listeners.CommandListenerPerishable;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -14,8 +17,10 @@ public class AxItems extends JavaPlugin {
 	public void onEnable() {
 		instance = this;
 		new CommandListener();
+		new CommandListenerPerishable();
 		new AxItemListeners();
 		new AxSetListener();
+		AxItem.addDisabledVanillas(Material.AIR);
 		Utils.chatColorsLogPlugin("&fAxItems &aloaded!");
 	}
 	

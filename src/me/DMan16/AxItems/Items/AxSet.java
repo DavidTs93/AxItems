@@ -143,13 +143,25 @@ public class AxSet implements Iterable<AxItem> {
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	public List<AxItem> getEquipped(@NotNull Player player) {
 		if (player == null) return null;
-		List<AxItem> equipped = new ArrayList<AxItem>();
+		List<AxItem> equipped = getEquippedSets(player).get(this);
+		return equipped == null ? new ArrayList<AxItem>() : equipped;
+	}
+	
+	public static HashMap<AxSet,List<AxItem>> getEquippedSets(@NotNull Player player) {
+		if (player == null) return null;
+		HashMap<AxSet,List<AxItem>> sets = new HashMap<AxSet,List<AxItem>>();
 		for (ItemStack armor : player.getEquipment().getArmorContents()) {
 			if (Utils.isNull(armor)) continue;
-			AxItem item = AxItem.getAxItem(armor).original();
-			if (item != null && contains(item)) equipped.add(item);
+			AxItem item = AxItem.getAxItem(armor);
+			if (item != null) {
+				List<AxSet> itemSets = item.getSets();
+				if (itemSets != null && !itemSets.isEmpty()) for (AxSet set : itemSets) {
+					if (!sets.containsKey(set)) sets.put(set, new ArrayList<AxItem>());
+					sets.get(set).add(item);
+				}
+			}
 		}
-		return equipped;
+		return sets;
 	}
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -184,6 +196,12 @@ public class AxSet implements Iterable<AxItem> {
 		int idx = AxSetKeys.indexOf(key.toLowerCase());
 		if (idx >= 0) return AxSets.get(idx);
 		return null;
+	}
+	
+	public static void addToSet(@NotNull String setKey, @NotNull String itemKey) {
+		if (setKey == null || itemKey == null) return;
+		AxSet set = getAxSet(setKey);
+		
 	}
 	
 	public static List<String> getAllSetNames() {

@@ -47,6 +47,10 @@ class KeyedItem implements Cloneable {
 		return key;
 	}
 	
+	public Material material() {
+		return item.getType();
+	}
+	
 	private ItemMeta meta() {
 		return item.getItemMeta();
 	}
@@ -143,36 +147,6 @@ class KeyedItem implements Cloneable {
 		meta.setUnbreakable(flag);
 		return meta(meta);
 	}
-	
-	/*public Multimap<Attribute,AttributeModifier> getAttributes() {
-		return meta().getAttributeModifiers();
-	}
-	
-	public KeyedItem setAttributes(Pair<Attribute,AttributeModifier> ... attributes) {
-		return clearAttributes().addAttributes(attributes);
-	}
-	
-	public KeyedItem clearAttributes() {
-		return removeAttributes(getAttributes().keySet().toArray(new Attribute[0]));
-	}
-	
-	public KeyedItem addAttributes(Pair<Attribute,AttributeModifier> ... attributes) {
-		ItemMeta meta = meta();
-		for (Pair<Attribute,AttributeModifier> attribute : attributes) meta.addAttributeModifier(attribute.first(),attribute.second());
-		return meta(meta);
-	}
-	
-	public KeyedItem removeAttributes(Attribute ... attributes) {
-		ItemMeta meta = meta();
-		for (Attribute attribute : attributes) meta.removeAttributeModifier(attribute);
-		return meta(meta);
-	}
-	
-	public KeyedItem removeAttributes(Pair<Attribute,AttributeModifier> ... attributes) {
-		ItemMeta meta = meta();
-		for (Pair<Attribute,AttributeModifier> attribute : attributes) meta.removeAttributeModifier(attribute.first(),attribute.second());
-		return meta(meta);
-	}*/
 	
 	@Override
 	public KeyedItem clone() {

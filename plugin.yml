@@ -9,6 +9,10 @@ api-version: 1.16
 commands:
   axitems:
     permission: aldreda.command.axitems
+  axitemsperishable:
+    permission: aldreda.command.axitemsperishable
 permissions:
   aldreda.command.axitems:
+    default: op
+  aldreda.command.axitemsperishable:
     default: op

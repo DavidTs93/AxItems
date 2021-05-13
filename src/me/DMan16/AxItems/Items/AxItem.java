@@ -30,6 +30,7 @@ public class AxItem extends KeyedItem {
 	private static List<AxItem> AxItems = new ArrayList<AxItem>();
 	private static List<String> disabledVanilla = new ArrayList<String>();
 	private static List<String> allKeywords = new ArrayList<String>();
+	private final static HashMap<Material,String> originals = new HashMap<Material,String>();
 	
 	private List<String> keywords;
 	private Component name;
@@ -44,6 +45,7 @@ public class AxItem extends KeyedItem {
 	 * PlayerInteractEvent will always be of Left Click action
 	 */
 	protected Consumer<Pair<AxItem,PlayerInteractEvent>> leftClick;
+	private final Material original;
 	
 	private AxItem(ItemStack item, @Nullable String key, @Nullable List<String> keywords, AxStat ... stats) {
 		this(item,key,null,null,null,keywords,stats);
@@ -55,8 +57,19 @@ public class AxItem extends KeyedItem {
 	}
 	
 	public AxItem(ItemStack item, @Nullable String key, @Nullable Component name, @Nullable List<Component> topLore, @Nullable List<Component> bottomLore,
+				  @Nullable Consumer<Pair<AxItem,PlayerInteractEvent>> rightClick, @Nullable Consumer<Pair<AxItem,PlayerInteractEvent>> leftClick,
+				  List<String> keywords, AxStat ... stats) {
+		this(item,key,name,topLore,bottomLore,rightClick,leftClick,keywords,null,stats);
+	}
+	
+	protected AxItem(ItemStack item, @Nullable String key, @Nullable Component name, @Nullable List<Component> topLore, @Nullable List<Component> bottomLore,
+				  @Nullable List<String> keywords, Material original, AxStat ... stats) {
+		this(item,key,name,topLore,bottomLore,null,null,keywords,original,stats);
+	}
+	
+	protected AxItem(ItemStack item, @Nullable String key, @Nullable Component name, @Nullable List<Component> topLore, @Nullable List<Component> bottomLore,
 			@Nullable Consumer<Pair<AxItem,PlayerInteractEvent>> rightClick, @Nullable Consumer<Pair<AxItem,PlayerInteractEvent>> leftClick,
-			List<String> keywords, AxStat ... stats) {
+			List<String> keywords, Material original, AxStat ... stats) {
 		super(clearItem(item),key);
 		this.name = name;
 		this.topLore = topLore == null ? new ArrayList<Component>() : new ArrayList<Component>(topLore);
@@ -64,6 +77,7 @@ public class AxItem extends KeyedItem {
 		this.rightClick = rightClick;
 		this.leftClick = leftClick;
 		this.keywords = new ArrayList<String>();
+		this.original = original;
 		this.stats = new ArrayList<AxStat>();
 		addKeywords(keywords);
 		addStats(stats);
@@ -93,12 +107,14 @@ public class AxItem extends KeyedItem {
 		return item;
 	}
 	
-	public Consumer<Pair<AxItem,PlayerInteractEvent>> rightClick() {
-		return rightClick;
+	public AxItem rightClick(Pair<AxItem,PlayerInteractEvent> info) {
+		if (rightClick != null) rightClick.accept(info);
+		return this;
 	}
 	
-	public Consumer<Pair<AxItem,PlayerInteractEvent>> leftClick() {
-		return leftClick;
+	public AxItem leftClick(Pair<AxItem,PlayerInteractEvent> info) {
+		if (leftClick != null) leftClick.accept(info);
+		return this;
 	}
 	
 	protected AxItem rightClick(Consumer<Pair<AxItem,PlayerInteractEvent>> rightClick) {
@@ -238,8 +254,10 @@ public class AxItem extends KeyedItem {
 	 * Once an Item has been registered its registered form can no longer be changed!!!
 	 */
 	public AxItem register() {
-		AxItemKeys.add(Objects.requireNonNull(AxItemKeys.contains(Objects.requireNonNull(key())) ? null :
-				Objects.requireNonNull(key(),"Item key cannot be NULL!"),"The key: \"" + key() + "\" is already being used!"));
+		Objects.requireNonNull(key(),"Item key cannot be NULL!");
+		if (AxItemKeys.contains(key())) throw new IllegalArgumentException("The key: \"" + key() + "\" is already being used!");
+		if (original != null) if (originals.putIfAbsent(original,key()) != null) throw new IllegalArgumentException("An original AxItemPerishable for this Material already exists!");
+		AxItemKeys.add(key());
 		AxItems.add(clone());
 		return this;
 	}
@@ -327,21 +345,28 @@ public class AxItem extends KeyedItem {
 		return this;
 	}
 	
-	public static ItemStack updateItem(ItemStack item, @NotNull Player player) {
+	public static ItemStack update(ItemStack item, @NotNull Player player) {
 		try {
-			return getAxItem(item).update(item).item(player);
+			return getAxItem(item).item(player);
 		} catch (Exception e) {}
 		return item;
-	}
-	
-	protected AxItem update(ItemStack item) {
-		return this;
 	}
 	
 	public static AxItem getAxItem(ItemStack original) {
 		try {
 			AxItem item = getAxItem(original.getItemMeta().getPersistentDataContainer().get(ItemKey,PersistentDataType.STRING));
-			if (original.getEnchantments().size() > 0) item.addEnchantments(Pair.fromMap(original.getEnchantments()));
+			item.meta(original.getItemMeta());
+			item.setAmount(original.getAmount());
+			
+			/*List<Component> aboveTopLore = item.aboveTopLore();
+			List<Component> statsLore = item.statsLore();
+			List<Component> enchantmentsLore = item.enchantmentsLore();
+			List<Component> belowBottomLore = item.belowBottomLore();
+			ListIterator<Component> iter = original.lore().listIterator();
+			List<Component> topLore = new ArrayList<Component>();
+			List<Component> bottomLore = new ArrayList<Component>();
+			for (int i = 0; iter.hasNext() && i < aboveTopLore.size(); i++) if (!aboveTopLore.get(i).equals(iter.next())) break;*/
+			
 			return item;
 		} catch (Exception e) {}
 		return null;
@@ -478,5 +503,12 @@ public class AxItem extends KeyedItem {
 			return item;
 		} catch (Exception e) {}
 		return null;
+	}
+	
+	public static AxItem getLegal(ItemStack original) {
+		if (Utils.isNull(original)) return null;
+		AxItem item = getAxItem(original);
+		if (item != null) return item;
+		return AxItem.getAxItem(originals.get(original.getType()));
 	}
 }
