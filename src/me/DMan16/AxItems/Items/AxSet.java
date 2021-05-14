@@ -2,6 +2,7 @@ package me.DMan16.AxItems.Items;
 
 import me.Aldreda.AxUtils.Utils.Utils;
 import me.DMan16.AxStats.AxStat;
+import me.DMan16.AxStats.AxStats;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -12,12 +13,15 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class AxSet implements Iterable<AxItem> {
 	private static final List<String> AxSetKeys = new ArrayList<String>();
 	private static final List<AxSet> AxSets = new ArrayList<AxSet>();
 	private static final String translatableSet = "item.aldreda.set.";
 	private static final TextColor defaultColor = NamedTextColor.GREEN;
+	private static final HashMap<String,List<String>> waiting = new HashMap<String,List<String>>();
 
 	private final String key;
 	private final TextColor color;
@@ -27,29 +31,29 @@ public class AxSet implements Iterable<AxItem> {
 	/**
 	 * @param color Cannot be DARK_GRAY, GRAY, or WHITE - null will be used instead
 	 */
-	public AxSet(@Nullable String key, @Nullable TextColor color, @NotNull SortedMap<Integer,List<AxStat>> statMap, String ... keys) {
+	public AxSet(@Nullable String key, @Nullable TextColor color,SortedMap<Integer,List<AxStat>> statMap, String ... keys) {
 		this(key,color,statMap,Arrays.asList(keys));
 	}
 	
-	public AxSet(@Nullable String key, @Nullable TextColor color, @NotNull SortedMap<Integer,List<AxStat>> statMap, List<String> keys) {
+	public AxSet(@Nullable String key, @Nullable TextColor color,SortedMap<Integer,List<AxStat>> statMap, List<String> keys) {
 		if (key != null) key = key.toLowerCase();
 		this.key = key;
 		if (color == null || color.compareTo(NamedTextColor.GRAY) == 0 || color.compareTo(NamedTextColor.WHITE) == 0 || color.compareTo(NamedTextColor.DARK_GRAY) == 0) this.color = null;
 		else this.color = color;
 		this.stats = new TreeMap<Integer,List<AxStat>>();
-		for (Map.Entry<Integer,List<AxStat>> stats : Objects.requireNonNull(Objects.requireNonNull(statMap,"Set stats map cannot be null!")).entrySet()) {
-			if (stats.getValue() == null) continue;
-			List<AxStat> list = new ArrayList<AxStat>();
-			for (AxStat stat : stats.getValue()) if (stat.val1() != 0) list.add(stat);
-			if (!list.isEmpty()) this.stats.put(stats.getKey(),list);
-		}
-		if (this.stats.isEmpty()) throw new NullPointerException("Set stats cannot be empty!");
 		this.keys = new ArrayList<String>();
-		for (String AxItemKey : Objects.requireNonNull(Objects.requireNonNull(keys).size() < 2 ? null : keys,"Set must contain at least 2 items!")) {
-			AxItem item = AxItem.getAxItem(Objects.requireNonNull(AxItemKey,"Set items cannot be null!"));
-			this.keys.add(Objects.requireNonNull(this.keys.contains(Objects.requireNonNull(Objects.requireNonNull(item,"Set item not found!").hasKeyword("vanilla") ? null : AxItemKey,
-					"Set items cannot be vanilla!")) ? null : AxItemKey,"Set cannot contain the same item twice!"));
+		setStatMap(statMap).addKeys(keys);
+	}
+	
+	private AxSet addKeys(List<String> keys) {
+		if (keys != null) for (String itemKey : keys) if (itemKey != null && !this.keys.contains(itemKey)) {
+			AxItem item = AxItem.getAxItem(itemKey);
+			if (item != null && !item.hasKeyword("vanilla")) {
+				this.keys.add(itemKey);
+				if (isRegistered()) AxItem.addToSets(item.key(),this);
+			}
 		}
+		return this;
 	}
 	
 	public List<AxItem> items() {
@@ -143,30 +147,47 @@ public class AxSet implements Iterable<AxItem> {
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	public List<AxItem> getEquipped(@NotNull Player player) {
 		if (player == null) return null;
-		List<AxItem> equipped = getEquippedSets(player).get(this);
-		return equipped == null ? new ArrayList<AxItem>() : equipped;
+		Set<String> equippedTemp = new HashSet<String>();
+		List<AxItem> equipped = new ArrayList<AxItem>();
+		for (ItemStack armor : player.getEquipment().getArmorContents()) {
+			if (Utils.isNull(armor)) continue;
+			AxItem item = AxItem.getAxItem(armor);
+			if (contains(item)) if (equippedTemp.add(item.key())) equipped.add(item);
+		}
+		return equipped;
 	}
 	
 	public static HashMap<AxSet,List<AxItem>> getEquippedSets(@NotNull Player player) {
 		if (player == null) return null;
 		HashMap<AxSet,List<AxItem>> sets = new HashMap<AxSet,List<AxItem>>();
-		for (ItemStack armor : player.getEquipment().getArmorContents()) {
-			if (Utils.isNull(armor)) continue;
-			AxItem item = AxItem.getAxItem(armor);
-			if (item != null) {
-				List<AxSet> itemSets = item.getSets();
-				if (itemSets != null && !itemSets.isEmpty()) for (AxSet set : itemSets) {
-					if (!sets.containsKey(set)) sets.put(set, new ArrayList<AxItem>());
-					sets.get(set).add(item);
-				}
-			}
+		for (AxSet set : AxSets) {
+			List<AxItem> equipped = set.getEquipped(player);
+			if (!equipped.isEmpty()) sets.put(set,equipped);
 		}
 		return sets;
 	}
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	
+	public boolean isRegistered() {
+		return key() != null && AxSetKeys.contains(key()) && AxSets.contains(this);
+	}
 
 	public int size() {
 		return keys.size();
+	}
+	
+	public List<AxStat> getStats(@NotNull Player player) {
+		if (player == null) return null;
+		int amount = getEquipped(player).size();
+		return getStats(amount);
+	}
+	
+	public List<AxStat> getStats(int amount) {
+		List<AxStat> stats = new ArrayList<AxStat>();
+		for (Map.Entry<Integer,List<AxStat>> stat : this.stats.entrySet())
+			if (stat.getKey() > amount) break;
+			else stats.addAll(stat.getValue());
+		return AxStats.joinStats(stats);
 	}
 	
 	public SortedMap<Integer,List<AxStat>> getStatMap() {
@@ -174,7 +195,18 @@ public class AxSet implements Iterable<AxItem> {
 		for (Map.Entry<Integer,List<AxStat>> stat : this.stats.entrySet()) stats.put(stat.getKey(), new ArrayList<AxStat>(stat.getValue()));
 		return stats;
 	}
-
+	
+	public AxSet setStatMap(SortedMap<Integer,List<AxStat>> statMap) {
+		this.stats.clear();
+		if (statMap != null) for (Map.Entry<Integer,List<AxStat>> stats : statMap.entrySet()) {
+			List<AxStat> list = new ArrayList<AxStat>();
+			if (stats.getKey() == null || stats.getKey() < 1 || stats.getValue() == null) continue;
+			for (AxStat stat : stats.getValue()) if (stat.val1() != 0) list.add(stat);
+			if (!list.isEmpty()) this.stats.put(stats.getKey(),list);
+		}
+		return this;
+	}
+	
 	public boolean contains(AxItem item) {
 		return item != null && item.key() != null && keys.contains(item.key());
 	}
@@ -184,10 +216,14 @@ public class AxSet implements Iterable<AxItem> {
 	 * Once a Set has been registered its registered form can no longer be changed!!!
 	 */
 	public AxSet register() {
-		AxSetKeys.add(Objects.requireNonNull(AxSetKeys.contains(Objects.requireNonNull(key())) ? null :
-			Objects.requireNonNull(key(),"Set key cannot be NULL!"),"The key: \"" + key() + "\" is already being used!"));
+		Objects.requireNonNull(key(),"Set key cannot be NULL!");
+		if (AxSetKeys.contains(key())) throw new IllegalArgumentException("The key: \"" + key() + "\" is already being used!");
+		AxSetKeys.add(key());
 		AxSets.add(this);
-		for (String key : keys) AxItem.getAxItemOriginal(key).addKeywords(Arrays.asList("set","set_" + this.key));
+		if (waiting.containsKey(key())) {
+			addKeys(waiting.get(key()));
+			waiting.remove(key());
+		}
 		return this;
 	}
 	
@@ -198,10 +234,14 @@ public class AxSet implements Iterable<AxItem> {
 		return null;
 	}
 	
-	public static void addToSet(@NotNull String setKey, @NotNull String itemKey) {
-		if (setKey == null || itemKey == null) return;
-		AxSet set = getAxSet(setKey);
-		
+	public static void addWhenPossible(@NotNull String setKey, String ... itemKeys) {
+		if (setKey == null) return;
+		setKey = setKey.toLowerCase();
+		int idx = AxSetKeys.indexOf(setKey);
+		if (idx < 0) {
+			if (!waiting.containsKey(setKey)) waiting.put(setKey, new ArrayList<String>());
+			for (String itemKey : itemKeys) if (!waiting.get(setKey).contains(itemKey)) waiting.get(setKey).add(itemKey);
+		} else AxSets.get(idx).addKeys(Arrays.asList(itemKeys));
 	}
 	
 	public static List<String> getAllSetNames() {

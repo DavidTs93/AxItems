@@ -4,6 +4,7 @@ import me.Aldreda.AxUtils.Classes.Pair;
 import me.Aldreda.AxUtils.Utils.Utils;
 import me.DMan16.AxStats.AxStat;
 import me.DMan16.AxStats.AxStatType;
+import me.DMan16.AxStats.AxStats;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -37,6 +38,7 @@ public class AxItem extends KeyedItem {
 	private List<Component> topLore;
 	private List<Component> bottomLore;
 	private List<AxStat> stats;
+	private List<AxSet> sets;
 	/**
 	 * PlayerInteractEvent will always be of Right Click action
 	 */
@@ -79,16 +81,26 @@ public class AxItem extends KeyedItem {
 		this.keywords = new ArrayList<String>();
 		this.original = original;
 		this.stats = new ArrayList<AxStat>();
+		this.sets = new ArrayList<AxSet>();
 		addKeywords(keywords);
 		addStats(stats);
 	}
 	
 	private static ItemStack clearItem(ItemStack item) {
 		if (Utils.isNull(item)) return null;
-		item = item.clone();
+		item = clearAttributes(item);
 		ItemMeta meta = item.getItemMeta();
 		meta.displayName(null);
 		meta.lore(null);
+		item.setItemMeta(meta);
+		return item;
+	}
+	
+	private static ItemStack clearAttributes(ItemStack item) {
+		if (Utils.isNull(item)) return null;
+		item = item.clone();
+		ItemMeta meta = item.getItemMeta();
+		meta.setAttributeModifiers(null);
 		item.setItemMeta(meta);
 		return item;
 	}
@@ -249,6 +261,14 @@ public class AxItem extends KeyedItem {
 		return sets;
 	}
 	
+	public static void addToSets(@NotNull String key, AxSet ... sets) {
+		if (key == null) return;
+		int idx = AxItemKeys.indexOf(key.toLowerCase());
+		if (idx < 0) return;
+		AxItem item = AxItems.get(idx);
+		for (AxSet set : sets) if (set != null && set.isRegistered()) item.addKeywords(Arrays.asList("set","set_" + set.key()));
+	}
+	
 	/**
 	 * IMPORTANT!!!
 	 * Once an Item has been registered its registered form can no longer be changed!!!
@@ -304,7 +324,8 @@ public class AxItem extends KeyedItem {
 	}
 	
 	protected AxItem addStats(List<AxStat> stats) {
-		if (stats == null) return this;
+		this.stats = AxStats.joinStats(Utils.joinLists(this.stats,stats));
+		/*if (stats == null) return this;
 		List<AxStat> add = new ArrayList<AxStat>();
 		for (AxStat stat : stats) if (stat != null && stat.val1() != 0) {
 			ListIterator<AxStat> iter = this.stats.listIterator();
@@ -320,7 +341,7 @@ public class AxItem extends KeyedItem {
 			}
 			if (!found) add.add(stat);
 		}
-		this.stats.addAll(add);
+		this.stats.addAll(add);*/
 		return this;
 	}
 	
@@ -354,6 +375,7 @@ public class AxItem extends KeyedItem {
 	
 	public static AxItem getAxItem(ItemStack original) {
 		try {
+			original = clearAttributes(original);
 			AxItem item = getAxItem(original.getItemMeta().getPersistentDataContainer().get(ItemKey,PersistentDataType.STRING));
 			item.meta(original.getItemMeta());
 			item.setAmount(original.getAmount());
@@ -380,13 +402,6 @@ public class AxItem extends KeyedItem {
 		if (disabledVanilla.contains(key)) return null;
 		Material material = Material.getMaterial(key.toUpperCase());
 		if (material != null) return new AxItem(new ItemStack(material),key,Arrays.asList("minecraft","vanilla"));
-		return null;
-	}
-	
-	static AxItem getAxItemOriginal(String key) {
-		if (key == null) return null;
-		int idx = AxItemKeys.indexOf(key.toLowerCase());
-		if (idx >= 0) return AxItems.get(idx);
 		return null;
 	}
 	
