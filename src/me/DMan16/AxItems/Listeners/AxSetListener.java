@@ -57,6 +57,11 @@ public class AxSetListener extends Listener {
 	}
 	
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+	public void onPickupItem(EntityPickupItemEvent event) {
+		if (!event.isCancelled() && (event.getEntity() instanceof Player)) event.getItem().setItemStack(AxItem.update(event.getItem().getItemStack(),(Player) event.getEntity()));
+	}
+	
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
 	public void onPickup(EntityPickupItemEvent event) {
 		if (!event.isCancelled()) event.getItem().setItemStack(AxItem.update(event.getItem().getItemStack(),(event.getEntity() instanceof Player) ? (Player) event.getEntity() : null));
 	}

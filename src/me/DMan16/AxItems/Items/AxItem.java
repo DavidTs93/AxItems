@@ -173,38 +173,25 @@ public class AxItem extends KeyedItem {
 	}
 	
 	protected List<Component> makeLore(Player player) {
-		List<Component> lore = new ArrayList<Component>();
+		List<List<Component>> loreTemp = new ArrayList<List<Component>>();
 		List<Component> aboveTopLore = aboveTopLore();
 		List<Component> statsLore = statsLore();
 		List<Component> setLore = setLore(player);
 		List<Component> enchantmentsLore = enchantmentsLore();
 		List<Component> belowBottomLore = belowBottomLore();
 		//lore.add(Component.empty());		// ?
-		if (!aboveTopLore.isEmpty()) {
-			lore.addAll(aboveTopLore);
-			lore.add(Component.empty());
+		if (!aboveTopLore.isEmpty()) loreTemp.add(aboveTopLore);
+		if (!topLore.isEmpty()) loreTemp.add(topLore);
+		if (!statsLore.isEmpty()) loreTemp.add(statsLore);
+		if (!enchantmentsLore.isEmpty()) loreTemp.add(enchantmentsLore);	// Maybe after setLore?
+		if (!setLore.isEmpty()) loreTemp.add(setLore);
+		if (!bottomLore.isEmpty()) loreTemp.add(bottomLore);
+		if (!belowBottomLore.isEmpty()) loreTemp.add(belowBottomLore);
+		List<Component> lore = new ArrayList<Component>();
+		for (int i = 0; i < loreTemp.size(); i++) {
+			if (i > 0) lore.add(Component.empty());
+			lore.addAll(loreTemp.get(i));
 		}
-		if (!topLore.isEmpty()) {
-			lore.addAll(topLore);
-			lore.add(Component.empty());
-		}
-		if (!statsLore.isEmpty()) {
-			lore.addAll(statsLore);
-			lore.add(Component.empty());
-		}
-		if (!enchantmentsLore.isEmpty()) {	// Maybe after setLore?
-			lore.addAll(enchantmentsLore);
-			lore.add(Component.empty());
-		}
-		if (!setLore.isEmpty()) {
-			lore.addAll(setLore);
-			lore.add(Component.empty());
-		}
-		if (!bottomLore.isEmpty()) {
-			lore.addAll(bottomLore);
-			lore.add(Component.empty());
-		}
-		if (!belowBottomLore.isEmpty()) lore.addAll(belowBottomLore);
 		return lore;
 	}
 	
@@ -375,9 +362,17 @@ public class AxItem extends KeyedItem {
 	
 	public static AxItem getAxItem(ItemStack original) {
 		try {
-			original = clearAttributes(original);
-			AxItem item = getAxItem(original.getItemMeta().getPersistentDataContainer().get(ItemKey,PersistentDataType.STRING));
-			item.meta(original.getItemMeta());
+			ItemMeta meta = original.getItemMeta();
+			AxItem item;
+			if (meta.getPersistentDataContainer().has(ItemKey,PersistentDataType.STRING)) {
+				item = getAxItem(meta.getPersistentDataContainer().get(ItemKey,PersistentDataType.STRING));
+				original = clearAttributes(original);
+			} else {
+				item = getAxItem(original.getType().name());
+				item.name(meta.displayName());
+				item.topLore(meta.lore());
+			}
+			item.meta(meta);
 			item.setAmount(original.getAmount());
 			
 			/*List<Component> aboveTopLore = item.aboveTopLore();
