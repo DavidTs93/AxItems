@@ -1,6 +1,7 @@
 package me.DMan16.AxItems.Items;
 
 import me.Aldreda.AxUtils.Classes.Pair;
+import me.Aldreda.AxUtils.Utils.ReflectionUtils;
 import me.Aldreda.AxUtils.Utils.Utils;
 import me.DMan16.AxStats.AxStat;
 import me.DMan16.AxStats.AxStatType;
@@ -110,7 +111,8 @@ public class AxItem extends KeyedItem {
 		ItemStack item = super.item(player);
 		ItemMeta meta = item.getItemMeta();
 		meta.displayName(makeName());
-		meta.lore(makeLore(player));
+		List<Component> lore = makeLore(player);
+		if (!lore.isEmpty()) meta.lore(lore);
 		for (AxStat stat : stats) {
 			Pair<Attribute,AttributeModifier> attribute = stat.attribute();
 			if (attribute != null && attribute.first() != null && attribute.second() != null) meta.addAttributeModifier(attribute.first(),attribute.second());
@@ -223,6 +225,7 @@ public class AxItem extends KeyedItem {
 	protected List<Component> enchantmentsLore() {
 		List<Component> enchantmentsLore = new ArrayList<Component>();
 		for (Entry<Enchantment,Integer> ench : getEnchantments().entrySet()) {
+			if (ench.getValue() <= 0) continue;
 			NamespacedKey key = ench.getKey().getKey();
 			Component comp = Component.translatable("enchantment." + key.getNamespace() + "." + key.getKey());
 			if (ench.getValue() != ench.getKey().getStartLevel() || ench.getKey().getStartLevel() != ench.getKey().getMaxLevel())

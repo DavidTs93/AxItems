@@ -15,7 +15,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -64,11 +63,6 @@ public class AxSetListener extends Listener {
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
 	public void onPickup(EntityPickupItemEvent event) {
 		if (!event.isCancelled()) event.getItem().setItemStack(AxItem.update(event.getItem().getItemStack(),(event.getEntity() instanceof Player) ? (Player) event.getEntity() : null));
-	}
-	
-	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-	public void onDrop(PlayerDropItemEvent event) {
-		if (!event.isCancelled()) event.getItemDrop().setItemStack(AxItem.update(event.getItemDrop().getItemStack(),event.getPlayer()));
 	}
 	
 	private void updateView(InventoryView view) {

@@ -21,6 +21,7 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.world.LootGenerateEvent;
+import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -58,17 +59,19 @@ public class AxItemListeners extends Listener {
 	
 	@EventHandler(ignoreCancelled = true)
 	public void fixCreativeItemsEvent(InventoryClickEvent event) {
-		if (event.isCancelled() || !(event.getWhoClicked() instanceof Player) || event.getInventory().getType() != InventoryType.CRAFTING) return;
+		if (event.isCancelled() || !(event.getWhoClicked() instanceof Player) || !(event.getInventory() instanceof CraftingInventory) || event.getView().getType() != InventoryType.CREATIVE) return;
 		Player player = (Player) event.getWhoClicked();
 		if (player.getGameMode() != GameMode.CREATIVE) return;
 		ItemStack item = event.getCursor();
-		if (AxItem.getAxItem(item) == null) new BukkitRunnable() {
+		new BukkitRunnable() {
 			public void run() {
 				try {
-					event.getClickedInventory().setItem(event.getSlot(),AxItem.getLegal(item).item(player));
-				} catch (Exception e) {
-					event.getClickedInventory().setItem(event.getSlot(),null);
-				}
+					if (AxItem.getAxItem(item) == null) try {
+						event.getClickedInventory().setItem(event.getSlot(),AxItem.getLegal(item).item(player));
+					} catch (Exception e) {
+						event.getClickedInventory().setItem(event.getSlot(),null);
+					} else event.getClickedInventory().setItem(event.getSlot(),AxItem.update(item,player));
+				} catch (Exception e) {}
 			}
 		}.runTask(AxItems.getInstance());
 	}
@@ -83,7 +86,7 @@ public class AxItemListeners extends Listener {
 			drop.setItemStack(AxItem.getLegal(item).item(event.getPlayer()));
 		} catch (Exception e) {
 			drop.remove();
-		}
+		} else drop.setItemStack(AxItem.update(item,event.getPlayer()));
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
