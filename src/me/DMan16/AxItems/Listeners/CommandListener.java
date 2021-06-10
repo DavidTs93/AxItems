@@ -110,10 +110,6 @@ public class CommandListener implements CommandExecutor,TabCompleter {
 			for (int i = 0; i < inventory.getSize(); i++) inventory.setItem(i,isBorder(i) ? border : null);
 		}
 		
-		private boolean isBorder(int slot) {
-			return (slot >= 0 && slot < 9) || (slot >= inventory.getSize() - 9 && slot < inventory.getSize()) || (slot % 9) == 0 || ((slot + 1) % 9) == 0; 
-		}
-		
 		protected ItemStack editItem(int idx) {
 			if (idx >= items.size()) return null;
 			return items.get(idx).item(player);
