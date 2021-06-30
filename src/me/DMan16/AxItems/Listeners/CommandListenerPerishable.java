@@ -1,7 +1,6 @@
 package me.DMan16.AxItems.Listeners;
 
 import me.DMan16.AxItems.AxItems;
-import me.DMan16.AxItems.Items.AxItem;
 import me.DMan16.AxItems.Items.AxItemPerishable;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
@@ -22,13 +21,13 @@ public class CommandListenerPerishable implements CommandExecutor, TabCompleter 
 		Player player = (Player) sender;
 		if (args[0].equalsIgnoreCase("damage")) {
 			try {
-				AxItemPerishable item = AxItemPerishable.getAxItemPerishable(player.getInventory().getItemInMainHand());
+				AxItemPerishable item = AxItemPerishable.getAxItem(player.getInventory().getItemInMainHand());
 				int amount = Integer.parseInt(args[1]);
 				player.getInventory().setItemInMainHand(item.damage(amount).item(player));
 			} catch (Exception e) {}
 		} else if (args[0].equalsIgnoreCase("repair")) {
 			try{
-				AxItemPerishable item = AxItemPerishable.getAxItemPerishable(player.getInventory().getItemInMainHand());
+				AxItemPerishable item = AxItemPerishable.getAxItem(player.getInventory().getItemInMainHand());
 				int amount = args.length > 1 ? Integer.parseInt(args[1]) : item.maxDurability;
 				player.getInventory().setItemInMainHand(item.repair(amount).item(player));
 			} catch (Exception e) {}

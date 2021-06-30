@@ -1,9 +1,8 @@
 package me.DMan16.AxItems.Items;
 
-import me.Aldreda.AxUtils.Classes.Pair;
 import me.Aldreda.AxUtils.Utils.Utils;
+import me.DMan16.AxItems.AxItems;
 import me.DMan16.AxItems.Restrictions.Restrictions;
-import me.DMan16.AxStats.AxStat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -13,24 +12,21 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 public abstract class AxItemPerishable extends AxItem {
-	protected final static String translateStatBase = "attribute.name.aldreda.";
-	protected final static NamespacedKey durabilityKey = Utils.namespacedKey("durability");
-	protected final static String attributeKey = Utils.namespacedKey("attribute").toString();
-	protected final static NamespacedKey brokenKey = Utils.namespacedKey("broken");
+	protected static final String translateStatBase = "attribute.name.aldreda.";
+	protected static final NamespacedKey durabilityKey = new NamespacedKey(AxItems.getInstance(),"axitem_durability");
+	protected static final String attributeKey = new NamespacedKey(AxItems.getInstance(),"axitem_attribute").toString();
+	protected static final NamespacedKey brokenKey = new NamespacedKey(AxItems.getInstance(),"axitem_broken");
 	
 	public final int maxDurability;
 	public final boolean isUnbreakable;
@@ -38,26 +34,12 @@ public abstract class AxItemPerishable extends AxItem {
 	protected boolean broken;
 	public final String repairItemKey;
 	
-	public AxItemPerishable(ItemStack item, @Nullable String key, @Nullable Component name, @Nullable List<Component> topLore, @Nullable List<Component> bottomLore,
-				  @Nullable List<String> keywords, int maxDurability, String repairItemKey, AxStat... stats) {
-		this(item,key,name,topLore,bottomLore,null,null,keywords,maxDurability,repairItemKey,stats);
+	protected AxItemPerishable(ItemStack item, @Nullable String key, @Nullable Component name, int maxDurability, String repairItemKey) {
+		this(item,key,name,null,maxDurability,repairItemKey);
 	}
 	
-	public AxItemPerishable(ItemStack item, @Nullable String key, @Nullable Component name, @Nullable List<Component> topLore, @Nullable List<Component> bottomLore,
-							@Nullable Consumer<Pair<AxItem, PlayerInteractEvent>> rightClick, @Nullable Consumer<Pair<AxItem,PlayerInteractEvent>> leftClick,
-							List<String> keywords, int maxDurability, String repairItemKey, AxStat ... stats) {
-		this(item,key,name,topLore,bottomLore,null,null,keywords,maxDurability,repairItemKey,null,stats);
-	}
-	
-	public AxItemPerishable(ItemStack item, @Nullable String key, @Nullable Component name, @Nullable List<Component> topLore, @Nullable List<Component> bottomLore,
-							@Nullable List<String> keywords, int maxDurability, String repairItemKey, Material original, AxStat... stats) {
-		this(item,key,name,topLore,bottomLore,null,null,keywords,maxDurability,repairItemKey,original,stats);
-	}
-	
-	protected AxItemPerishable(ItemStack item, @Nullable String key, @Nullable Component name, @Nullable List<Component> topLore, @Nullable List<Component> bottomLore,
-				  @Nullable Consumer<Pair<AxItem, PlayerInteractEvent>> rightClick, @Nullable Consumer<Pair<AxItem,PlayerInteractEvent>> leftClick,
-				  List<String> keywords, int maxDurability, String repairItemKey, Material original, AxStat ... stats) {
-		super(item,key,name,topLore,bottomLore,null,null,keywords,original,stats);
+	protected AxItemPerishable(ItemStack item, @Nullable String key, @Nullable Component name, Material original, int maxDurability, String repairItemKey) {
+		super(item,key,name,original);
 		this.maxDurability = maxDurability;
 		this.isUnbreakable = maxDurability <= 0;
 		this.durability = maxDurability;
@@ -76,7 +58,7 @@ public abstract class AxItemPerishable extends AxItem {
 	}
 	
 	@Override
-	public ItemStack item(Player player) {
+	public ItemStack item(@Nullable Player player) {
 		if (broken) return brokenItem(player);
 		return super.item(player);
 	}
@@ -122,14 +104,15 @@ public abstract class AxItemPerishable extends AxItem {
 		meta.addAttributeModifier(Attribute.GENERIC_MOVEMENT_SPEED, new AttributeModifier(UUID.randomUUID(),attributeKey,0, AttributeModifier.Operation.ADD_NUMBER,
 				EquipmentSlot.OFF_HAND));
 		meta.getPersistentDataContainer().set(brokenKey,PersistentDataType.STRING,Utils.ObjectToBase64(super.item(player)));
+		if (key() != null) meta.getPersistentDataContainer().set(ItemKey,PersistentDataType.STRING,key());
 		item.setItemMeta(meta);
 		return Restrictions.Unequippable.add(item);
 	}
 	
 	// !!!
 	@Override
-	protected List<Component> belowBottomLore() {
-		List<Component> belowBottomLore = new ArrayList<Component>();
+	protected List<Component> bottomLoreFinal(Player player) {
+		List<Component> bottomLore = super.bottomLoreFinal(player);
 		Component durabilityLine;
 		if (!isUnbreakable) {
 			TextColor color;
@@ -141,15 +124,15 @@ public abstract class AxItemPerishable extends AxItem {
 			durabilityLine = Component.translatable("item.durability",NamedTextColor.GRAY,Component.text(durability,color),
 					Component.text(maxDurability,NamedTextColor.AQUA)).decoration(TextDecoration.ITALIC,false);
 		} else durabilityLine = Component.translatable("item.unbreakable",NamedTextColor.BLUE).decoration(TextDecoration.ITALIC,false);
-		belowBottomLore.add(durabilityLine);
-		return belowBottomLore;
+		bottomLore.add(durabilityLine);
+		return bottomLore;
 	}
 	
-	public static AxItemPerishable getAxItemPerishable(ItemStack original) {
+	public static AxItemPerishable getAxItem(ItemStack original) {
 		try {
 			if (original.getItemMeta().getPersistentDataContainer().get(brokenKey,PersistentDataType.STRING) != null)
-				return getAxItemPerishable((ItemStack) Utils.ObjectFromBase64(original.getItemMeta().getPersistentDataContainer().get(brokenKey,PersistentDataType.STRING)));
-			return (AxItemPerishable) getAxItem(original);
+				return getAxItem((ItemStack) Utils.ObjectFromBase64(original.getItemMeta().getPersistentDataContainer().get(brokenKey,PersistentDataType.STRING)));
+			return (AxItemPerishable) AxItem.getAxItem(original,AxItem.class);
 		} catch (Exception e) {}
 		return null;
 	}

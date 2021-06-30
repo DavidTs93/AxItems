@@ -2,6 +2,7 @@ package me.DMan16.AxItems.Items;
 
 import me.Aldreda.AxUtils.Classes.Pair;
 import me.Aldreda.AxUtils.Utils.Utils;
+import me.DMan16.AxItems.AxItems;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -10,14 +11,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Objects;
 
 @SuppressWarnings("unchecked")
 class KeyedItem implements Cloneable {
-	protected final static NamespacedKey ItemKey = Utils.namespacedKey("aldreda_axitem");
+	protected final static NamespacedKey ItemKey = new NamespacedKey(AxItems.getInstance(),"aldreda_axitem");
 	
 	private ItemStack item;
 	private String key;
@@ -27,19 +28,20 @@ class KeyedItem implements Cloneable {
 	}
 	
 	KeyedItem(ItemStack item, @Nullable String key) {
-		this.item = Objects.requireNonNull(Utils.isNull(item) ? null : item.clone());
-		if (key != null) {
-			ItemMeta meta = this.item.getItemMeta();
-			meta.getPersistentDataContainer().set(ItemKey,PersistentDataType.STRING,key);
-			this.item.setItemMeta(meta);
-		}
+		if (Utils.isNull(item)) throw new NullPointerException();
+		this.item = item.clone();
+		ItemMeta meta = this.item.getItemMeta();
+		if (meta.getPersistentDataContainer().has(ItemKey,PersistentDataType.STRING)) meta.getPersistentDataContainer().remove(ItemKey);
+		if (key != null) meta.getPersistentDataContainer().set(ItemKey,PersistentDataType.STRING,key);
+		this.item.setItemMeta(meta);
 		this.key = key;
 	}
 	
 	/**
 	 * @return clone of the item
+	 * @param player
 	 */
-	public ItemStack item(Player player) {
+	public ItemStack item(@Nullable Player player) {
 		return item.clone();
 	}
 	

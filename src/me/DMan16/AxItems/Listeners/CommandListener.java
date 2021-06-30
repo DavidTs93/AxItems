@@ -11,6 +11,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -37,19 +38,19 @@ public class CommandListener implements CommandExecutor,TabCompleter {
 			new ShowItems(player,item == null ? Arrays.asList() : Arrays.asList(item));
 		} else if (args[0].equalsIgnoreCase(base.get(1))) {
 			List<AxItem> items = new ArrayList<AxItem>();
+			List<String> keys = new ArrayList<String>();
 			List<List<List<String>>> keywords = new ArrayList<List<List<String>>>();
 			for (int i = 1; i < args.length; i++) {
 				String[] list = args[i].split(",");
 				for (AxItem item : AxItem.getByKeywords(list)) {
-					int idx = items.indexOf(item);
+					int idx = keys.indexOf(item.key());
 					if (idx < 0) {
+						keys.add(item.key());
 						idx = items.size();
 						items.add(item);
 						keywords.add(new ArrayList<List<String>>());
 					}
-					List<List<String>> keys = keywords.get(idx);
-					keys.add(Arrays.asList(list));
-					keywords.set(idx,keys);
+					keywords.get(idx).add(Arrays.asList(list));
 				}
 			}
 			new ShowItemsKeywords(player,items,keywords);
@@ -127,7 +128,9 @@ public class CommandListener implements CommandExecutor,TabCompleter {
 		
 		protected void otherSlot(InventoryClickEvent event, int slot, ItemStack slotItem) {
 			if (slot >= inventory.getSize() || isBorder(slot)) return;
-			Utils.givePlayer((Player) event.getWhoClicked(),this.items.get(slot + 28 * (currentPage - 1) - 8 - 2 * (slot / 9)).item(player),null,false);
+			int line = (slot / 9) - 1;
+			int row = slot - ((line + 1) * 9) - 1;
+			Utils.givePlayer((Player) event.getWhoClicked(),this.items.get(28 * (currentPage - 1) + (line * 7) + row).item(player),null,false);
 		}
 	}
 	
@@ -158,6 +161,16 @@ public class CommandListener implements CommandExecutor,TabCompleter {
 					keywords)).color(NamedTextColor.AQUA)).decoration(TextDecoration.ITALIC,false));
 			item.lore(lore);
 			return item;
+		}
+		
+		@Override
+		protected void next(ClickType click) {
+			changePage(click.isRightClick() ? 5 : 1);
+		}
+		
+		@Override
+		protected void previous(ClickType click) {
+			changePage(click.isRightClick() ? -5 : -1);
 		}
 	}
 }

@@ -133,7 +133,7 @@ public class AxItemListeners extends Listener {
 	public void customDurabilityEvent(PlayerItemDamageEvent event) {
 		int dmg = event.getDamage();
 		if (event.isCancelled() || dmg <= 0 || event.getPlayer() == null) return;
-		AxItemPerishable item = AxItemPerishable.getAxItemPerishable(event.getItem());
+		AxItemPerishable item = AxItemPerishable.getAxItem(event.getItem());
 		if (item == null || item.isUnbreakable) return;
 		item.damage(dmg);
 		if (item.isBroken()) event.setDamage(event.getItem().getType().getMaxDurability());
@@ -166,8 +166,8 @@ public class AxItemListeners extends Listener {
 		Player player = (Player) event.getView().getPlayer();
 		new BukkitRunnable() {
 			public void run() {
-				AxItemPerishable item1 = AxItemPerishable.getAxItemPerishable(event.getInventory().getItem(0));
-				AxItemPerishable result = AxItemPerishable.getAxItemPerishable(event.getInventory().getItem(2));
+				AxItemPerishable item1 = AxItemPerishable.getAxItem(event.getInventory().getItem(0));
+				AxItemPerishable result = AxItemPerishable.getAxItem(event.getInventory().getItem(2));
 				if (item1 == null || result == null) return;
 				if (Utils.isNull(event.getInventory().getItem(1))) {
 					if (result != null) event.getInventory().setItem(2,result.item(player));
@@ -190,7 +190,7 @@ public class AxItemListeners extends Listener {
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
 	public void clickAnvilArmorPerishableEvent(InventoryClickEvent event) {
 		if (event.isCancelled() || event.getInventory().getType() != InventoryType.ANVIL) return;
-		AxItemPerishable item1 = AxItemPerishable.getAxItemPerishable(event.getInventory().getItem(0));
+		AxItemPerishable item1 = AxItemPerishable.getAxItem(event.getInventory().getItem(0));
 		if (item1 == null) return;
 		ItemStack item2 = event.getInventory().getItem(1);
 		if (!Utils.isNull(item2) && item1.repairItemKey != null) new BukkitRunnable() {
